@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent Case Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0E1729;
+    --ink-2:#5A6478;
+    --bg:#EEF1F6;
+    --paper:#FFFFFF;
+    --line:#DDE3EC;
+    --line-2:#EAEEF4;
+    --primary:#3B41E0;
+    --primary-soft:#ECEDFC;
+    --primary-ink:#2A2FA8;
+    --teal:#0FA3A3;
+    --teal-soft:#E1F5F4;
+    --amber:#C6811A;
+    --amber-soft:#FBEFD8;
+    --slate:#5B6779;
+    --slate-soft:#EDF0F4;
+    --shadow:0 1px 2px rgba(14,23,41,.05), 0 10px 30px rgba(14,23,41,.06);
+    --shadow-lift:0 2px 4px rgba(14,23,41,.06), 0 18px 46px rgba(14,23,41,.10);
+    --r:14px;
+    --r-sm:10px;
+    --font-display:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 82% -10%, #E3E9FF 0%, rgba(227,233,255,0) 55%),
+      radial-gradient(900px 500px at 8% 110%, #E0F5F3 0%, rgba(224,245,243,0) 55%),
+      var(--bg);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    padding:28px 20px 64px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  .wrap{max-width:960px;margin:0 auto}
+
+  /* Header */
+  .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px}
+  .brand-eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--primary-ink);
+    display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  }
+  .brand-eyebrow .tick{width:16px;height:2px;background:var(--primary);display:inline-block}
+  .brand-title{font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.02em;line-height:1.02;margin:0}
+  .brand-sub{color:var(--ink-2);font-size:14.5px;margin-top:8px;max-width:46ch}
+  .masthead-side{font-family:var(--font-mono);font-size:11px;color:var(--slate);text-align:right;letter-spacing:.04em}
+
+  /* Rail */
+  .rail{display:flex;gap:6px;margin:0 0 18px;padding:0;list-style:none}
+  .rail li{flex:1;min-width:0}
+  .rail button{
+    all:unset;display:block;width:100%;cursor:pointer;
+    border-top:2px solid var(--line);
+    padding:9px 2px 0;
+  }
+  .rail button:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:4px}
+  .rail .n{font-family:var(--font-mono);font-size:11px;color:var(--slate)}
+  .rail .lbl{font-size:12.5px;color:var(--ink-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rail li[data-state="active"] button{border-top-color:var(--primary)}
+  .rail li[data-state="active"] .n{color:var(--primary-ink)}
+  .rail li[data-state="active"] .lbl{color:var(--ink)}
+  .rail li[data-state="done"] button{border-top-color:var(--teal)}
+  .rail li[data-state="done"] .n{color:var(--teal)}
+
+  /* Card */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  .stage{padding:30px 34px 26px}
+  .step-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--slate)}
+  .step-title{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:-.01em;margin:6px 0 3px}
+  .step-hint{color:var(--ink-2);font-size:14px;margin:0 0 22px;max-width:60ch}
+
+  .anim{animation:rise .32s cubic-bezier(.2,.7,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* Fields */
+  .field{margin-bottom:20px}
+  .field > label{display:block;font-weight:600;font-size:13.5px;margin-bottom:7px}
+  .field .sub{color:var(--ink-2);font-weight:400;font-size:12.5px;margin-top:2px}
+  input[type=text],textarea,select{
+    width:100%;font-family:var(--font-body);font-size:15px;color:var(--ink);
+    background:#FBFCFE;border:1px solid var(--line);border-radius:var(--r-sm);
+    padding:11px 13px;transition:border-color .15s, box-shadow .15s;
+  }
+  textarea{resize:vertical;min-height:64px}
+  input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A6478' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+  .invalid{border-color:#C0392B !important;box-shadow:0 0 0 3px #F8E4E1 !important}
+  .err{color:#B23B2C;font-size:12.5px;margin-top:6px;display:none}
+  .err.show{display:block}
+
+  /* Chip groups */
+  .group{margin-bottom:22px}
+  .group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:11px}
+  .group-head h4{font-size:13px;font-weight:600;margin:0;letter-spacing:.01em}
+  .group-head .tag{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:20px}
+  .tag.pro{background:var(--teal-soft);color:#0A7C7C}
+  .tag.int{background:var(--slate-soft);color:var(--slate)}
+  .tag.risk{background:var(--amber-soft);color:#9A6412}
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{
+    all:unset;cursor:pointer;font-size:13.5px;line-height:1.3;
+    border:1px solid var(--line);border-radius:22px;padding:8px 14px;
+    background:#FBFCFE;color:var(--ink);transition:.14s;user-select:none;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none;transition:.14s}
+  .chip:hover{border-color:#C7CFDC}
+  .chip:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .chip[aria-pressed="true"]{background:var(--primary-soft);border-color:#BFC2F4;color:var(--primary-ink);font-weight:500}
+  .chip[aria-pressed="true"] .dot{background:var(--primary)}
+  .chips.pro .chip[aria-pressed="true"]{background:var(--teal-soft);border-color:#A8DEDC;color:#096F6F}
+  .chips.pro .chip[aria-pressed="true"] .dot{background:var(--teal)}
+  .chips.risk .chip[aria-pressed="true"]{background:var(--amber-soft);border-color:#EAD3A0;color:#8A5A10}
+  .chips.risk .chip[aria-pressed="true"] .dot{background:var(--amber)}
+
+  /* Radio cards */
+  .radios{display:grid;gap:10px}
+  .radio{
+    all:unset;cursor:pointer;display:flex;gap:12px;align-items:flex-start;
+    border:1px solid var(--line);border-radius:var(--r-sm);padding:13px 15px;background:#FBFCFE;transition:.14s;
+  }
+  .radio:hover{border-color:#C7CFDC}
+  .radio:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .radio[aria-pressed="true"]{border-color:var(--primary);background:var(--primary-soft)}
+  .radio .mark{width:18px;height:18px;border-radius:50%;border:2px solid #C2CAD8;margin-top:1px;flex:none;position:relative;transition:.14s}
+  .radio[aria-pressed="true"] .mark{border-color:var(--primary)}
+  .radio[aria-pressed="true"] .mark::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--primary)}
+  .radio .rt{font-weight:600;font-size:14px}
+  .radio .rs{color:var(--ink-2);font-size:12.5px;margin-top:1px}
+
+  /* ROI grid */
+  .roi-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px}
+  .roi-grid .full{grid-column:1 / -1}
+  .num-field label{display:block;font-weight:600;font-size:13px;margin-bottom:7px}
+  .num-wrap{position:relative;display:flex;align-items:center}
+  .num-wrap .pre{position:absolute;left:12px;color:var(--slate);font-family:var(--font-mono);font-size:14px}
+  .num-wrap .suf{position:absolute;right:12px;color:var(--slate);font-size:13px}
+  .num-wrap input{font-family:var(--font-mono)}
+  .num-wrap.has-pre input{padding-left:26px}
+  .num-wrap.has-suf input{padding-right:52px}
+
+  .slider-block{margin-top:4px}
+  .slider-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+  .slider-top .big{font-family:var(--font-mono);font-size:26px;font-weight:500;color:var(--primary-ink)}
+  .slider-top .cap{color:var(--ink-2);font-size:12.5px;max-width:34ch;text-align:right}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;background:linear-gradient(90deg,var(--teal) 0 var(--fill,70%),var(--line-2) var(--fill,70%) 100%);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--teal);box-shadow:0 2px 6px rgba(14,23,41,.18);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--teal);box-shadow:0 2px 6px rgba(14,23,41,.18);cursor:pointer}
+  input[type=range]:focus-visible{box-shadow:0 0 0 3px var(--teal-soft)}
+
+  .preview{margin-top:20px;border:1px dashed var(--line);border-radius:var(--r-sm);padding:15px 16px;background:#FBFCFE;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .preview .pv-num{font-family:var(--font-mono);font-size:22px;font-weight:500;color:var(--ink)}
+  .preview .pv-lab{font-size:12px;color:var(--ink-2);margin-top:1px}
+  .preview .pv-note{font-size:12.5px;color:var(--ink-2);text-align:right;max-width:32ch}
+
+  /* Footer nav */
+  .stepnav{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 34px;border-top:1px solid var(--line-2);background:#FBFCFE}
+  .btn{all:unset;cursor:pointer;font-family:var(--font-body);font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;transition:.15s;text-align:center}
+  .btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 16px rgba(59,65,224,.28)}
+  .btn-primary:hover{background:#3237CF}
+  .btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink);border-color:#C7CFDC}
+  .btn[disabled]{opacity:.4;pointer-events:none}
+  .nav-progress{font-family:var(--font-mono);font-size:11px;color:var(--slate);letter-spacing:.04em}
+
+  /* Intro */
+  .intro-lede{font-size:16px;color:var(--ink);max-width:56ch;margin:0 0 20px;line-height:1.55}
+  .intro-lede b{font-weight:600}
+  .lens-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0 26px}
+  .lens{border:1px solid var(--line);border-radius:var(--r-sm);padding:15px 16px;background:#FBFCFE}
+  .lens .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--primary-ink)}
+  .lens .t{font-family:var(--font-display);font-weight:600;font-size:15px;margin:5px 0 3px}
+  .lens .d{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+
+  /* Results */
+  .verdict{padding:22px 24px;border-radius:var(--r);border:1px solid;display:flex;gap:18px;align-items:flex-start;margin-bottom:22px}
+  .verdict .badge{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:20px;white-space:nowrap;margin-top:3px}
+  .verdict h3{font-family:var(--font-display);font-weight:600;font-size:20px;margin:0 0 6px;letter-spacing:-.01em}
+  .verdict p{margin:0;font-size:14px;line-height:1.5}
+  .verdict .next{margin-top:10px;font-size:13.5px;color:var(--ink)}
+  .verdict .next b{font-weight:600}
+  .v-strong{background:var(--teal-soft);border-color:#B6E2E0}
+  .v-strong .badge{background:#0FA3A3;color:#fff} .v-strong h3{color:#0A6E6E}
+  .v-hybrid{background:var(--amber-soft);border-color:#EAD8AE}
+  .v-hybrid .badge{background:var(--amber);color:#fff} .v-hybrid h3{color:#8A5A10}
+  .v-integration{background:var(--slate-soft);border-color:#D6DCE6}
+  .v-integration .badge{background:var(--slate);color:#fff} .v-integration h3{color:#3E4a5c}
+  .v-possible{background:var(--primary-soft);border-color:#C6C9F6}
+  .v-possible .badge{background:var(--primary);color:#fff} .v-possible h3{color:var(--primary-ink)}
+  .v-none{background:#F6F8FB;border-color:var(--line)}
+  .v-none .badge{background:var(--slate);color:#fff} .v-none h3{color:var(--ink)}
+
+  .result-cols{display:grid;grid-template-columns:1.05fr .95fr;gap:18px}
+  .panel{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .panel-head{padding:12px 18px;border-bottom:1px solid var(--line-2);background:#FBFCFE;display:flex;align-items:center;justify-content:space-between}
+  .panel-head .h{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+  .panel-body{padding:18px}
+
+  .summary-block{margin-bottom:16px}
+  .summary-block:last-child{margin-bottom:0}
+  .summary-block .sk{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--primary-ink);margin-bottom:4px}
+  .summary-block .sv{font-size:14px;line-height:1.5;color:var(--ink)}
+  .taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .taglist span{font-size:12px;background:#F1F4F9;border:1px solid var(--line-2);border-radius:16px;padding:3px 10px;color:var(--ink-2)}
+
+  .hero-num{font-family:var(--font-mono);font-weight:500;font-size:44px;line-height:1;letter-spacing:-.02em;color:var(--ink)}
+  .hero-num.neg{color:var(--amber)}
+  .hero-lab{font-size:13px;color:var(--ink-2);margin-top:8px}
+  .roi-stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line-2)}
+  .roi-stats .rs .v{font-family:var(--font-mono);font-size:19px;font-weight:500;color:var(--ink)}
+  .roi-stats .rs .l{font-size:11.5px;color:var(--ink-2);margin-top:2px}
+
+  .gauge{margin-top:20px}
+  .gauge-top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);margin-bottom:7px}
+  .gauge-bar{height:9px;border-radius:9px;background:var(--line-2);overflow:hidden}
+  .gauge-fill{height:100%;background:linear-gradient(90deg,var(--teal),#39BEBE);width:0;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+  .gauge-note{font-size:12.5px;color:var(--ink-2);margin-top:9px;line-height:1.45}
+
+  .assume{margin-top:16px;padding:14px 16px;background:#F6F8FB;border-radius:var(--r-sm);font-size:12.5px;color:var(--ink-2);line-height:1.55}
+  .assume b{color:var(--ink);font-weight:600}
+
+  .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:24px}
+  .actions .spacer{flex:1}
+  .copied{font-size:12.5px;color:var(--teal);font-family:var(--font-mono);opacity:0;transition:opacity .2s}
+  .copied.show{opacity:1}
+
+  .foot-note{text-align:center;font-size:11.5px;color:var(--slate);margin-top:22px;font-family:var(--font-mono);letter-spacing:.03em}
+
+  @media (max-width:720px){
+    body{padding:20px 14px 48px}
+    .stage{padding:24px 20px}
+    .stepnav{padding:14px 20px}
+    .brand-title{font-size:25px}
+    .masthead-side{display:none}
+    .lens-row{grid-template-columns:1fr}
+    .roi-grid{grid-template-columns:1fr}
+    .result-cols{grid-template-columns:1fr}
+    .rail .lbl{display:none}
+    .verdict{flex-direction:column;gap:12px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .anim{animation:none}
+    .gauge-fill{transition:none}
+    input[type=range]{transition:none}
+  }
+
+  /* Print: keep only the takeaway card, drop the chrome */
+  @media print{
+    body{background:#fff;padding:0}
+    .no-print{display:none !important}
+    .card{box-shadow:none;border:none}
+    .stage{padding:0}
+    .result-cols{grid-template-columns:1fr 1fr}
+    .verdict,.panel{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="masthead no-print">
+      <div>
+        <div class="brand-eyebrow"><span class="tick"></span> Boomi AgentStudio</div>
+        <h1 class="brand-title">Agent Case Builder</h1>
+        <p class="brand-sub">Map the what, where, and when of an agent idea, then see whether it earns its keep.</p>
+      </div>
+      <div class="masthead-side">Live discovery tool<br />v1</div>
+    </header>
+
+    <ul class="rail no-print" id="rail"></ul>
+
+    <div class="card">
+      <div class="stage" id="stage" aria-live="polite"></div>
+      <div class="stepnav no-print" id="nav"></div>
+    </div>
+
+    <p class="foot-note no-print">Signals in, verdict out. The tool never overstates the case.</p>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var STEP_LABELS = ["What","Where","When","Value","Verdict"];
+
+  var PRO = [
+    ["unstructured","Inputs are unstructured (email, docs, chat, tickets)"],
+    ["variety","Lots of variation and edge cases"],
+    ["language","Needs to read or write natural language"],
+    ["judgment","Requires judgment, not just a lookup"],
+    ["multisystem","Pulls from several systems to decide"],
+    ["context","The right action depends on context"]
+  ];
+  var INTG = [
+    ["rules","The logic is fixed and rule-based"],
+    ["structured","Inputs are already clean and structured"],
+    ["deterministic","One correct path every time"],
+    ["highvolume","Very high volume, low variation"]
+  ];
+  var RISK = [
+    ["money","High financial impact"],
+    ["compliance","Regulated or compliance-sensitive"],
+    ["irreversible","Errors are costly or hard to undo"]
+  ];
+  var SYSTEMS = ["Salesforce","NetSuite","SAP","ServiceNow","Workday","Zendesk","HubSpot","Jira","Slack or Teams","Email","Database","Custom API","Other"];
+  var GOV = [
+    ["audit","Audit trail"],
+    ["guardrails","Policy guardrails"],
+    ["pii","PII masking"],
+    ["approval","Human approval gate"],
+    ["limits","Rate and cost limits"]
+  ];
+  var TRIGGERS = [
+    ["event","An event kicks it off","A record changes, a file lands, a message arrives."],
+    ["scheduled","It runs on a schedule","A recurring batch, for example every morning or hour."],
+    ["ondemand","A person asks it on demand","Conversational, someone starts it when they need it."]
+  ];
+  var REGIONS = [["NA","North America"],["EU","Europe"],["APAC","Asia Pacific"],["Global","Global / multi-region"]];
+
+  var state = {
+    step: 0,
+    process: "",
+    doneBy: "",
+    pro: {}, intg: {}, risk: {},
+    systems: {},
+    region: "NA",
+    gov: {},
+    trigger: "event",
+    volume: 500, minutes: 12, rate: 45, automation: 70, build: 0, run: 0,
+    _shownResult: false
+  };
+
+  var stage = document.getElementById("stage");
+  var nav = document.getElementById("nav");
+  var rail = document.getElementById("rail");
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); }
+  function count(o){ var n=0; for(var k in o){ if(o[k]) n++; } return n; }
+  function keys(o){ var a=[]; for(var k in o){ if(o[k]) a.push(k); } return a; }
+  function money(n){
+    var neg = n < 0; n = Math.round(Math.abs(n));
+    return (neg?"-$":"$") + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function num(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  /* ---------- ROI math ---------- */
+  function roi(){
+    var v = Math.max(0, +state.volume || 0);
+    var m = Math.max(0, +state.minutes || 0);
+    var r = Math.max(0, +state.rate || 0);
+    var a = Math.min(100, Math.max(0, +state.automation || 0)) / 100;
+    var build = Math.max(0, +state.build || 0);
+    var run = Math.max(0, +state.run || 0);
+    var hoursMo = v * (m/60) * a;
+    var grossMo = hoursMo * r;
+    var netMo = grossMo - run;
+    var annual = netMo * 12;
+    var hoursYr = hoursMo * 12;
+    var handled = v * a;
+    var escalated = v - handled;
+    var payback;
+    if (build <= 0) payback = "Immediate";
+    else if (netMo <= 0) payback = "Not reached";
+    else payback = (build / netMo).toFixed(1) + " mo";
+    return {v:v,m:m,r:r,a:a,build:build,run:run,hoursMo:hoursMo,grossMo:grossMo,netMo:netMo,annual:annual,hoursYr:hoursYr,handled:handled,escalated:escalated,payback:payback};
+  }
+
+  /* ---------- Verdict logic ---------- */
+  function verdict(){
+    var a = count(state.pro), i = count(state.intg), s = count(state.risk);
+    if (a === 0 && i === 0) return {
+      cls:"v-none", badge:"Not enough signal", head:"Not enough signal yet",
+      why:"You have not flagged what makes this an agent problem, or what makes it a straight integration.",
+      next:"Go back to What and mark the traits that fit. The verdict sharpens with every one you add."
+    };
+    if (a === 0) return {
+      cls:"v-integration", badge:"Integration", head:"This is an integration, not an agent",
+      why:"Nothing here calls for language, judgment, or handling ambiguity, so an agent would add cost and unpredictability with little upside.",
+      next:"Build it as a Boomi integration process. It will be cheaper, faster, and easier to govern. Keep agents for the judgment-heavy steps nearby."
+    };
+    if (i >= 2 && a <= 1) return {
+      cls:"v-integration", badge:"Integration", head:"Leans integration, not agent",
+      why:"The work is mostly rule-based with structured inputs, and only one trait points toward an agent.",
+      next:"Start with a Boomi integration process. Revisit an agent only if the judgment or natural-language part turns out to be real."
+    };
+    if (a >= 2 && s >= 1) return {
+      cls:"v-hybrid", badge:"Agent + oversight", head:"Agent fit, keep a person in the loop",
+      why:"There is real judgment here, but the stakes mean someone should sign off before the agent acts.",
+      next:"Build the agent to draft and recommend, add a human approval gate, and watch its decisions in Agent Control Tower until you trust it enough to widen the guardrails."
+    };
+    if (a >= 2) return {
+      cls:"v-strong", badge:"Strong fit", head:"Strong agent fit",
+      why:"This has the ambiguity, language, and judgment that agents are built for, and the stakes are manageable.",
+      next:"Build it in AgentStudio to run hands-free, reach your systems through MCP connectors, and stay governed in Agent Control Tower with a full audit trail."
+    };
+    return {
+      cls:"v-possible", badge:"Possible fit", head:"Possible agent fit, sharpen the case",
+      why:"There is a spark of an agent case, but the judgment or language element is thin right now.",
+      next:"Pin down where a person actually exercises judgment or reads unstructured input. If you cannot, this is probably an integration."
+    };
+  }
+
+  /* ---------- Card text ---------- */
+  function labelFor(list, key){ for(var j=0;j<list.length;j++){ if(list[j][0]===key) return list[j][1]; } return key; }
+  function triggerPhrase(){
+    if (state.trigger==="scheduled") return "runs on a schedule";
+    if (state.trigger==="ondemand") return "is started on demand by a person";
+    return "is triggered by an event";
+  }
+  function regionLabel(){ for(var j=0;j<REGIONS.length;j++){ if(REGIONS[j][0]===state.region) return REGIONS[j][1]; } return state.region; }
+  function cardTitle(){
+    var p = state.process.trim();
+    if (!p) return "Untitled agent";
+    return p.charAt(0).toUpperCase() + p.slice(1) + " agent";
+  }
+  function whatLine(){
+    var p = state.process.trim() || "this work";
+    var by = state.doneBy.trim();
+    var traits = keys(state.pro).slice(0,3).map(function(k){ return labelFor(PRO,k).toLowerCase(); });
+    var base = "Today, " + p + " is handled " + (by ? "by " + by : "manually") + ".";
+    if (traits.length){
+      base += " It is a good agent candidate because it involves " + joinList(traits) + ".";
+    }
+    return base;
+  }
+  function joinList(arr){
+    if (arr.length===0) return "";
+    if (arr.length===1) return arr[0];
+    if (arr.length===2) return arr[0]+" and "+arr[1];
+    return arr.slice(0,-1).join(", ") + ", and " + arr[arr.length-1];
+  }
+  function systemsList(){ return keys(state.systems); }
+
+  /* ---------- Renderers per step ---------- */
+  function render(){
+    renderRail();
+    var html = "";
+    if (state.step===0) html = viewIntro();
+    else if (state.step===1) html = viewWhat();
+    else if (state.step===2) html = viewWhere();
+    else if (state.step===3) html = viewWhen();
+    else if (state.step===4) html = viewValue();
+    else if (state.step===5) html = viewResult();
+    stage.innerHTML = html;
+    renderNav();
+    bind();
+    stage.scrollIntoView ? null : null;
+    window.scrollTo({top:0, behavior: reduceMotion ? "auto" : "smooth"});
+  }
+
+  function renderRail(){
+    rail.innerHTML = STEP_LABELS.map(function(lab, idx){
+      var stepNum = idx + 1;
+      var st = "";
+      if (state.step === stepNum) st = "active";
+      else if (state.step > stepNum) st = "done";
+      var n = ("0"+stepNum).slice(-2);
+      return '<li data-state="'+st+'"><button data-goto="'+stepNum+'"><div class="n">'+n+'</div><div class="lbl">'+lab+'</div></button></li>';
+    }).join("");
+  }
+
+  function renderNav(){
+    if (state.step===0){
+      nav.innerHTML = '<span class="nav-progress">5 short steps</span><span class="spacer"></span><button class="btn btn-primary" data-act="next">Start</button>';
+      return;
+    }
+    if (state.step===5){
+      nav.innerHTML = '<button class="btn btn-ghost" data-act="back">Back</button><span class="nav-progress">Verdict</span><span style="flex:1"></span><button class="btn btn-ghost" data-act="restart">New case</button>';
+      return;
+    }
+    var lastInput = state.step===4;
+    nav.innerHTML =
+      '<button class="btn btn-ghost" data-act="back">Back</button>'+
+      '<span class="nav-progress">Step '+state.step+' of 5</span>'+
+      '<span style="flex:1"></span>'+
+      '<button class="btn btn-primary" data-act="next">'+(lastInput ? "See the verdict" : "Next")+'</button>';
+  }
+
+  function viewIntro(){
+    return '<div class="anim">'+
+      '<div class="step-eyebrow">Before you build</div>'+
+      '<h2 class="step-title">Not every idea should be an agent</h2>'+
+      '<p class="intro-lede">This walks a customer from a fuzzy "could we use an agent for that?" to three clear answers: <b>whether it fits</b>, <b>what it would cost and return</b>, and <b>a one-page card</b> to take away. It is built to be honest, so a rule-based task comes back as an integration, not an agent.</p>'+
+      '<div class="lens-row">'+
+        '<div class="lens"><div class="k">What</div><div class="t">The job and the fit</div><div class="d">The task, who owns it today, and the traits that make it agent-worthy.</div></div>'+
+        '<div class="lens"><div class="k">Where</div><div class="t">Systems and guardrails</div><div class="d">What it connects to, where the data lives, and how it stays governed.</div></div>'+
+        '<div class="lens"><div class="k">When</div><div class="t">Trigger and payoff</div><div class="d">What sets it off, how often, and what that is worth per year.</div></div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function chipRow(list, groupKey, extraClass){
+    return list.map(function(pair){
+      var key = pair[0], label = pair[1];
+      var on = !!state[groupKey][key];
+      return '<button class="chip" role="button" aria-pressed="'+on+'" data-toggle="'+groupKey+'" data-key="'+key+'"><span class="dot"></span>'+esc(label)+'</button>';
+    }).join("");
+  }
+
+  function viewWhat(){
+    return '<div class="anim">'+
+      '<div class="step-eyebrow">01 / What</div>'+
+      '<h2 class="step-title">Name the job, then test the fit</h2>'+
+      '<p class="step-hint">Describe the work in the customer\'s own words, then flag the traits that match. The more you mark, the sharper the verdict.</p>'+
+
+      '<div class="field">'+
+        '<label for="f-process">What is the process or task?</label>'+
+        '<input type="text" id="f-process" data-input="process" value="'+esc(state.process)+'" placeholder="e.g. triaging inbound support cases" />'+
+        '<div class="err" id="err-process">Name the process first, for example inbound support triage.</div>'+
+      '</div>'+
+
+      '<div class="field">'+
+        '<label for="f-doneby">Who handles it today? <span class="sub">Optional, helps frame the ROI.</span></label>'+
+        '<input type="text" id="f-doneby" data-input="doneBy" value="'+esc(state.doneBy)+'" placeholder="e.g. two tier-1 support reps" />'+
+      '</div>'+
+
+      '<div class="group">'+
+        '<div class="group-head"><h4>Points toward an agent</h4><span class="tag pro">agent</span></div>'+
+        '<div class="chips pro">'+chipRow(PRO,"pro")+'</div>'+
+      '</div>'+
+      '<div class="group">'+
+        '<div class="group-head"><h4>Better handled by a straight integration</h4><span class="tag int">integration</span></div>'+
+        '<div class="chips">'+chipRow(INTG,"intg")+'</div>'+
+      '</div>'+
+      '<div class="group">'+
+        '<div class="group-head"><h4>Raises the stakes</h4><span class="tag risk">oversight</span></div>'+
+        '<div class="chips risk">'+chipRow(RISK,"risk")+'</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function viewWhere(){
+    var sysChips = SYSTEMS.map(function(s){
+      var on = !!state.systems[s];
+      return '<button class="chip" role="button" aria-pressed="'+on+'" data-toggle="systems" data-key="'+esc(s)+'"><span class="dot"></span>'+esc(s)+'</button>';
+    }).join("");
+    var regionOpts = REGIONS.map(function(r){
+      return '<option value="'+r[0]+'"'+(state.region===r[0]?" selected":"")+'>'+esc(r[1])+'</option>';
+    }).join("");
+    return '<div class="anim">'+
+      '<div class="step-eyebrow">02 / Where</div>'+
+      '<h2 class="step-title">Where it connects and how it stays governed</h2>'+
+      '<p class="step-hint">Agents reach systems through MCP connectors and stay observable in Agent Control Tower. Capture what this one touches.</p>'+
+
+      '<div class="group">'+
+        '<div class="group-head"><h4>Systems it needs to reach</h4></div>'+
+        '<div class="chips">'+sysChips+'</div>'+
+      '</div>'+
+
+      '<div class="field">'+
+        '<label for="f-region">Where does the data live?</label>'+
+        '<select id="f-region" data-input="region">'+regionOpts+'</select>'+
+        '<div class="sub" style="margin-top:6px">Region shapes runtime placement and data residency for the agent.</div>'+
+      '</div>'+
+
+      '<div class="group">'+
+        '<div class="group-head"><h4>Governance it needs</h4></div>'+
+        '<div class="chips">'+chipRow(GOV,"gov")+'</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function viewWhen(){
+    var radios = TRIGGERS.map(function(t){
+      var on = state.trigger===t[0];
+      return '<button class="radio" role="button" aria-pressed="'+on+'" data-radio="trigger" data-key="'+t[0]+'">'+
+        '<span class="mark"></span><span><span class="rt">'+esc(t[1])+'</span><span class="rs">'+esc(t[2])+'</span></span></button>';
+    }).join("");
+    return '<div class="anim">'+
+      '<div class="step-eyebrow">03 / When</div>'+
+      '<h2 class="step-title">What sets it off</h2>'+
+      '<p class="step-hint">How the agent starts tells you how to build it and how to price the run.</p>'+
+      '<div class="radios">'+radios+'</div>'+
+    '</div>';
+  }
+
+  function viewValue(){
+    var r = roi();
+    var fillPct = Math.min(100, Math.max(0, state.automation));
+    return '<div class="anim">'+
+      '<div class="step-eyebrow">04 / Value</div>'+
+      '<h2 class="step-title">Make the ROI honest</h2>'+
+      '<p class="step-hint">Rough numbers are fine. The automation rate is the honesty lever: agents rarely handle everything, so the rest still routes to a person.</p>'+
+
+      '<div class="roi-grid">'+
+        numField("volume","How often does it happen?","","per month", state.volume)+
+        numField("minutes","Time per case today","","minutes", state.minutes)+
+        numField("rate","Loaded hourly rate","$","per hour", state.rate)+
+        numField("build","One-time build cost","$","optional", state.build)+
+        numField("run","Monthly run cost","$","optional", state.run)+
+        '<div class="num-field"></div>'+
+      '</div>'+
+
+      '<div class="field full slider-block" style="margin-top:22px">'+
+        '<label for="f-auto" style="font-weight:600;font-size:13px;margin-bottom:9px;display:block">Share the agent handles on its own</label>'+
+        '<div class="slider-top"><span class="big" id="auto-read">'+fillPct+'%</span><span class="cap">The rest escalates to a person. Be conservative here and the case still holds.</span></div>'+
+        '<input type="range" id="f-auto" min="0" max="100" step="5" value="'+fillPct+'" style="--fill:'+fillPct+'%" />'+
+      '</div>'+
+
+      '<div class="preview">'+
+        '<div><div class="pv-num" id="pv-annual">'+money(r.annual)+'</div><div class="pv-lab">estimated net value per year</div></div>'+
+        '<div class="pv-note" id="pv-note">'+previewNote(r)+'</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function numField(key,label,pre,suf,val){
+    var wrapCls = "num-wrap" + (pre?" has-pre":"") + (suf?" has-suf":"");
+    return '<div class="num-field">'+
+      '<label for="f-'+key+'">'+esc(label)+'</label>'+
+      '<div class="'+wrapCls+'">'+
+        (pre?'<span class="pre">'+pre+'</span>':'')+
+        '<input type="text" inputmode="numeric" id="f-'+key+'" data-num="'+key+'" value="'+esc(val)+'" />'+
+        (suf?'<span class="suf">'+esc(suf)+'</span>':'')+
+      '</div>'+
+    '</div>';
+  }
+
+  function previewNote(r){
+    if (r.netMo <= 0 && (r.run>0 || r.annual<=0)){
+      return "At these inputs the case does not clear yet. Nudge volume, time saved, or the automation rate to find the tipping point.";
+    }
+    return "About " + num(r.handled) + " of " + num(r.v) + " cases run hands-free each month, returning roughly " + num(r.hoursYr) + " hours a year.";
+  }
+
+  function viewResult(){
+    var vd = verdict();
+    var r = roi();
+    var sys = systemsList();
+    var govList = keys(state.gov).map(function(k){ return labelFor(GOV,k); });
+    var sysHtml = sys.length ? '<div class="taglist">'+sys.map(function(s){return '<span>'+esc(s)+'</span>';}).join("")+'</div>' : '<div class="sv" style="color:var(--ink-2)">No systems captured yet.</div>';
+    var whereText = "Reaches its systems through MCP connectors, with " + esc(regionLabel().toLowerCase()) + " data residency" + (govList.length ? ", governed in Agent Control Tower with " + esc(joinList(govList).toLowerCase()) : ", governed in Agent Control Tower") + ".";
+    var whenText = "It " + esc(triggerPhrase()) + ", about " + num(r.v) + " times a month.";
+
+    var heroCls = r.annual < 0 ? "hero-num neg" : "hero-num";
+    var handledLine = (r.netMo <= 0)
+      ? "At these inputs the run cost outweighs the savings. Raise volume, time saved, or automation to clear it."
+      : "About " + num(r.handled) + " of " + num(r.v) + " cases run hands-free. The other " + num(r.escalated) + " still route to a person.";
+
+    var runLine = r.run>0 ? " Net of " + money(r.run*12) + " a year in run cost." : "";
+
+    return '<div class="anim">'+
+      '<div class="verdict '+vd.cls+'">'+
+        '<span class="badge">'+esc(vd.badge)+'</span>'+
+        '<div><h3>'+esc(vd.head)+'</h3><p>'+esc(vd.why)+'</p>'+
+        '<div class="next"><b>Next:</b> '+esc(vd.next)+'</div></div>'+
+      '</div>'+
+
+      '<div class="result-cols">'+
+        '<div class="panel">'+
+          '<div class="panel-head"><span class="h">Use-case card</span></div>'+
+          '<div class="panel-body">'+
+            '<div class="summary-block"><div class="sk">The agent</div><div class="sv" style="font-family:var(--font-display);font-weight:600;font-size:16px">'+esc(cardTitle())+'</div></div>'+
+            '<div class="summary-block"><div class="sk">What</div><div class="sv">'+esc(whatLine())+'</div></div>'+
+            '<div class="summary-block"><div class="sk">Where</div><div class="sv">'+whereText+'</div>'+sysHtml+'</div>'+
+            '<div class="summary-block"><div class="sk">When</div><div class="sv">'+whenText+'</div></div>'+
+          '</div>'+
+        '</div>'+
+
+        '<div class="panel">'+
+          '<div class="panel-head"><span class="h">Return on investment</span></div>'+
+          '<div class="panel-body">'+
+            '<div class="'+heroCls+'" id="hero-annual" data-target="'+Math.round(r.annual)+'">'+money(r.annual)+'</div>'+
+            '<div class="hero-lab">estimated net value per year'+runLine+'</div>'+
+            '<div class="roi-stats">'+
+              '<div class="rs"><div class="v">'+num(r.hoursYr)+'</div><div class="l">hours returned per year</div></div>'+
+              '<div class="rs"><div class="v">'+esc(r.payback)+'</div><div class="l">payback on build</div></div>'+
+            '</div>'+
+            '<div class="gauge">'+
+              '<div class="gauge-top"><span>Handled by the agent</span><span>'+Math.round(state.automation)+'%</span></div>'+
+              '<div class="gauge-bar"><div class="gauge-fill" id="gauge-fill" data-target="'+Math.round(state.automation)+'"></div></div>'+
+              '<div class="gauge-note">'+handledLine+'</div>'+
+            '</div>'+
+            '<div class="assume"><b>Based on</b> about '+num(r.v)+' cases a month, '+num(r.m)+' minutes each today, '+money(r.r)+' per hour loaded, and '+Math.round(state.automation)+'% handled autonomously.</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+
+      '<div class="actions no-print">'+
+        '<button class="btn btn-primary" data-act="print">Save as PDF</button>'+
+        '<button class="btn btn-ghost" data-act="copy">Copy summary</button>'+
+        '<span class="copied" id="copied">Copied</span>'+
+        '<span class="spacer"></span>'+
+        '<button class="btn btn-ghost" data-act="back">Edit inputs</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  /* ---------- Summary text for copy ---------- */
+  function summaryText(){
+    var vd = verdict(); var r = roi();
+    var sys = systemsList().join(", ") || "none captured";
+    var gov = keys(state.gov).map(function(k){return labelFor(GOV,k);}).join(", ") || "standard";
+    var lines = [];
+    lines.push(cardTitle().toUpperCase());
+    lines.push("");
+    lines.push("VERDICT: " + vd.head);
+    lines.push(vd.why);
+    lines.push("Next: " + vd.next);
+    lines.push("");
+    lines.push("WHAT: " + whatLine());
+    lines.push("WHERE: Systems: " + sys + ". Data residency: " + regionLabel() + ". Governance: " + gov + ". Reaches systems via MCP connectors, governed in Agent Control Tower.");
+    lines.push("WHEN: It " + triggerPhrase() + ", about " + num(r.v) + " times a month.");
+    lines.push("");
+    lines.push("ROI: " + money(r.annual) + " estimated net value per year. " + num(r.hoursYr) + " hours returned per year. Payback " + r.payback + ".");
+    lines.push("Assumptions: about " + num(r.v) + " cases/month, " + num(r.m) + " min each, " + money(r.r) + "/hr loaded, " + Math.round(state.automation) + "% handled autonomously (about " + num(r.escalated) + " cases/month still route to a person).");
+    return lines.join("\n");
+  }
+
+  /* ---------- Interactions ---------- */
+  function bind(){
+    // rail navigation (only to visited or current-adjacent steps)
+    rail.querySelectorAll("[data-goto]").forEach(function(b){
+      b.onclick = function(){
+        var target = +b.getAttribute("data-goto");
+        if (target <= state.step) { state.step = target; render(); }
+        else if (target === state.step + 1) { goNext(); }
+      };
+    });
+
+    stage.querySelectorAll("[data-input]").forEach(function(el){
+      el.addEventListener("input", function(){ state[el.getAttribute("data-input")] = el.value; });
+    });
+    stage.querySelectorAll("[data-num]").forEach(function(el){
+      el.addEventListener("input", function(){
+        var clean = el.value.replace(/[^0-9.]/g,"");
+        state[el.getAttribute("data-num")] = clean === "" ? 0 : parseFloat(clean);
+        if (state.step===4) refreshPreview();
+      });
+      el.addEventListener("blur", function(){ el.value = state[el.getAttribute("data-num")]; });
+    });
+
+    stage.querySelectorAll("[data-toggle]").forEach(function(el){
+      el.addEventListener("click", function(){
+        var g = el.getAttribute("data-toggle"), k = el.getAttribute("data-key");
+        state[g][k] = !state[g][k];
+        el.setAttribute("aria-pressed", state[g][k] ? "true":"false");
+      });
+    });
+
+    stage.querySelectorAll("[data-radio]").forEach(function(el){
+      el.addEventListener("click", function(){
+        var g = el.getAttribute("data-radio"), k = el.getAttribute("data-key");
+        state[g] = k;
+        stage.querySelectorAll('[data-radio="'+g+'"]').forEach(function(x){ x.setAttribute("aria-pressed", x===el ? "true":"false"); });
+      });
+    });
+
+    var slider = document.getElementById("f-auto");
+    if (slider){
+      slider.addEventListener("input", function(){
+        state.automation = +slider.value;
+        slider.style.setProperty("--fill", slider.value + "%");
+        var read = document.getElementById("auto-read");
+        if (read) read.textContent = slider.value + "%";
+        refreshPreview();
+      });
+    }
+
+    nav.querySelectorAll("[data-act]").forEach(function(b){
+      b.onclick = function(){
+        var act = b.getAttribute("data-act");
+        if (act==="next") goNext();
+        else if (act==="back") { state.step = Math.max(0, state.step-1); render(); }
+        else if (act==="restart") resetAll();
+        else if (act==="print") window.print();
+        else if (act==="copy") copySummary();
+      };
+    });
+
+    // results-only animations
+    if (state.step===5) animateResult();
+  }
+
+  function refreshPreview(){
+    var r = roi();
+    var a = document.getElementById("pv-annual");
+    var n = document.getElementById("pv-note");
+    if (a) a.textContent = money(r.annual);
+    if (n) n.textContent = previewNote(r);
+  }
+
+  function goNext(){
+    if (state.step===1){
+      if (!state.process.trim()){
+        var inp = document.getElementById("f-process");
+        var err = document.getElementById("err-process");
+        if (inp){ inp.classList.add("invalid"); inp.focus(); }
+        if (err){ err.classList.add("show"); }
+        return;
+      }
+    }
+    state.step = Math.min(5, state.step+1);
+    render();
+  }
+
+  function animateResult(){
+    var hero = document.getElementById("hero-annual");
+    var fill = document.getElementById("gauge-fill");
+    var negative = hero && hero.classList.contains("neg");
+    if (fill){
+      var pct = +fill.getAttribute("data-target");
+      if (reduceMotion){ fill.style.width = pct + "%"; }
+      else { requestAnimationFrame(function(){ setTimeout(function(){ fill.style.width = pct + "%"; }, 60); }); }
+    }
+    if (hero){
+      var target = +hero.getAttribute("data-target");
+      if (reduceMotion || target === 0){ hero.textContent = money(target); return; }
+      var start = null, dur = 780, from = 0;
+      function tick(ts){
+        if (!start) start = ts;
+        var p = Math.min(1, (ts-start)/dur);
+        var eased = 1 - Math.pow(1-p, 3);
+        var val = from + (target-from)*eased;
+        hero.textContent = money(val);
+        if (p < 1) requestAnimationFrame(tick);
+        else hero.textContent = money(target);
+      }
+      requestAnimationFrame(tick);
+    }
+  }
+
+  function copySummary(){
+    var text = summaryText();
+    var done = function(){
+      var c = document.getElementById("copied");
+      if (c){ c.classList.add("show"); setTimeout(function(){ c.classList.remove("show"); }, 1600); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text); done(); });
+    } else { fallbackCopy(text); done(); }
+  }
+  function fallbackCopy(text){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+  }
+
+  function resetAll(){
+    state.step=0; state.process=""; state.doneBy="";
+    state.pro={}; state.intg={}; state.risk={}; state.systems={}; state.gov={};
+    state.region="NA"; state.trigger="event";
+    state.volume=500; state.minutes=12; state.rate=45; state.automation=70; state.build=0; state.run=0;
+    render();
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
