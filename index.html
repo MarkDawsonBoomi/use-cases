@@ -240,6 +240,13 @@
   .assume{margin-top:16px;padding:14px 16px;background:#F6F8FB;border-radius:var(--r-sm);font-size:12.5px;color:var(--ink-2);line-height:1.55}
   .assume b{color:var(--ink);font-weight:600}
 
+  .boomi-panel{margin-top:18px}
+  .boomi-panel .panel-head .h{color:var(--primary-ink)}
+  .boomi-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+  .boomi-list li{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+  .boomi-list li b{color:var(--ink);font-weight:600}
+  .boomi-list .bt{flex:none;width:17px;height:17px;margin-top:1px;color:var(--primary)}
+
   .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:24px}
   .actions .spacer{flex:1}
   .copied{font-size:12.5px;color:var(--teal);font-family:var(--font-mono);opacity:0;transition:opacity .2s}
@@ -453,6 +460,29 @@
     return arr.slice(0,-1).join(", ") + ", and " + arr[arr.length-1];
   }
   function systemsList(){ return keys(state.systems); }
+
+  function boomiPoints(){
+    var vd = verdict();
+    var sys = systemsList();
+    var gov = keys(state.gov).map(function(k){ return labelFor(GOV,k); });
+    var pts = [];
+    if (sys.length){
+      pts.push("The " + sys.length + " system" + (sys.length>1?"s":"") + " you listed reach the agent through <b>Boomi's managed MCP connectors</b>, reusing integration you likely already run.");
+    } else {
+      pts.push("Agents reach your systems through <b>Boomi's managed MCP connectors</b>, so you reuse existing integration instead of writing new point-to-point code.");
+    }
+    if (gov.length){
+      pts.push("<b>Agent Control Tower</b> covers the governance you flagged (" + gov.join(", ") + ") natively, so it is part of the platform, not extra build scope.");
+    } else {
+      pts.push("<b>Agent Control Tower</b> adds audit, guardrails, and cost limits across every agent, so oversight is built in from day one.");
+    }
+    if (vd.cls === "v-integration"){
+      pts.push("Because this lands as an integration, you build it as a <b>Boomi integration process</b> now, and extend it into an agent later on the same platform if judgment shows up.");
+    } else {
+      pts.push("The deterministic steps around the agent run on <b>the same platform</b>, so there is nothing separate to stitch together.");
+    }
+    return pts;
+  }
 
   /* ---------- Renderers per step ---------- */
   function render(){
@@ -699,6 +729,13 @@
         '</div>'+
       '</div>'+
 
+      '<div class="panel boomi-panel">'+
+        '<div class="panel-head"><span class="h">How it comes together on Boomi</span></div>'+
+        '<div class="panel-body"><ul class="boomi-list">'+
+          boomiPoints().map(function(p){ return '<li><span class="bt"><svg viewBox="0 0 18 18" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5l3.5 3.5L14.5 5.5"/></svg></span><span>'+p+'</span></li>'; }).join("")+
+        '</ul></div>'+
+      '</div>'+
+
       '<div class="actions no-print">'+
         '<button class="btn btn-primary" data-act="print">Save as PDF</button>'+
         '<button class="btn btn-ghost" data-act="copy">Copy summary</button>'+
@@ -727,6 +764,8 @@
     lines.push("");
     lines.push("ROI: " + money(r.annual) + " estimated net value per year. " + num(r.hoursYr) + " hours returned per year. Payback " + r.payback + ".");
     lines.push("Assumptions: about " + num(r.v) + " cases/month, " + num(r.m) + " min each, " + money(r.r) + "/hr loaded, " + Math.round(state.automation) + "% handled autonomously (about " + num(r.escalated) + " cases/month still route to a person).");
+    lines.push("");
+    lines.push("ON BOOMI: " + boomiPoints().map(function(p){ return p.split("<b>").join("").split("</b>").join(""); }).join(" "));
     return lines.join("\n");
   }
 
